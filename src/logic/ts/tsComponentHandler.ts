@@ -36,17 +36,14 @@ export class TSComponentHandler {
   }
 
   /**
-   * Add an input class property
-   * @param key The name of the Input
+   * Add an input class property using the Angular signals API: myProp = input<unknown>();
+   * @param key The name of the input signal
    * @returns self reference
    */
   addInput(key: string): TSComponentHandler {
-    const classProp = componentPropertyBuilder()
-      .setKey(key)
-      .setDecorator("Input")
-      .build();
+    const classProp = componentPropertyBuilder().setKey(key).build();
     addStatementToComponent(this.component, classProp);
-    this.importHandler.ensureThatImportExists("Input", "@angular/core");
+    this.importHandler.ensureThatImportExists("input", "@angular/core");
     return this;
   }
 

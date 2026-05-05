@@ -15,6 +15,7 @@ import {
   startProgress,
   updateFiles,
 } from "../utils";
+import { detectStyleExtension, readAssociatedStyles } from "../utils/getStyleExtension";
 import { getLogger } from "../utils/logger";
 
 interface ExtractCommandData {
@@ -24,6 +25,7 @@ interface ExtractCommandData {
   componentDirectory: string;
   selection: vscode.Selection;
   useNpx: boolean;
+  styleExtension: string;
 }
 
 /**
@@ -45,6 +47,7 @@ export const getExtractCommand = async (context: vscode.ExtensionContext) => {
     componentDirectory,
     selection,
     changes,
+    styleExtension,
   } = commandData;
 
   try {
@@ -57,7 +60,7 @@ export const getExtractCommand = async (context: vscode.ExtensionContext) => {
       startProgress([
         {
           execute: () =>
-            generateNewComponent(useNpx, componentName, componentDirectory),
+            generateNewComponent(useNpx, componentName, componentDirectory, styleExtension),
           message: "Generate new component",
         },
         {
@@ -129,6 +132,12 @@ const getExtractCommandData = async (
   }
   const defaultPrefix = getConfig(extensionId, "default-prefix");
 
+  // Detect style extension from the project directory
+  const styleExtension = detectStyleExtension(componentDirectory);
+
+  // Try to read styles associated with the current HTML file
+  const associatedStyles = readAssociatedStyles(document.fileName);
+
   const changes = getChanges({
     componentName,
     directory: componentDirectory,
@@ -136,6 +145,8 @@ const getExtractCommandData = async (
     config: {
       defaultPrefix,
     },
+    styleExtension,
+    associatedStyles: associatedStyles || undefined,
   });
 
   return {
@@ -145,5 +156,6 @@ const getExtractCommandData = async (
     componentDirectory,
     componentName,
     selection,
+    styleExtension,
   };
 };

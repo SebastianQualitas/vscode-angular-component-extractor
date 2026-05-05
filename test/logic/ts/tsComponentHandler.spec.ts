@@ -3,14 +3,15 @@ import { TSComponentHandler } from "../../../src/logic/ts";
 import { expectCodeMatch, removeLineBreaksAndSpaces } from "../../utils";
 
 describe("Angular typescript handler", () => {
-  it("find component", () => {
+  it("adds input signal property using input() API", () => {
     const tsHandler = new TSComponentHandler(`
 import { Component, OnInit } from '@angular/core';
 
 @Component({
   selector: 'app-test',
   templateUrl: './test.component.html',
-  styleUrls: ['./test.component.css']
+  styleUrl: './test.component.css',
+  standalone: false
 })
 export class TestComponent implements OnInit {
   constructor() { }
@@ -19,12 +20,21 @@ export class TestComponent implements OnInit {
 }
     `);
     const code = tsHandler.addInput("test").stringify();
-    expectCodeMatch(
-      code,
-      `@Input()
-        test: any;`
-    );
-    expectImportMatch(code, "Input", "@angular/core");
+    // Should use signals API: test = input()
+    expectCodeMatch(code, `test = input()`);
+    // Should import input from @angular/core
+    expectImportMatch(code, "input", "@angular/core");
+  });
+
+  it("adds multiple input signal properties", () => {
+    const tsHandler = new TSComponentHandler(`
+import { Component } from '@angular/core';
+@Component({ selector: 'app-test', standalone: false })
+export class TestComponent {}
+    `);
+    const code = tsHandler.addInput("title").addInput("count").stringify();
+    expectCodeMatch(code, `title = input()`);
+    expectCodeMatch(code, `count = input()`);
   });
 });
 

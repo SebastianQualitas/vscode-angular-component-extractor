@@ -1,25 +1,24 @@
 import {
-  anyTypeAnnotation,
   callExpression,
   ClassProperty,
   classProperty,
-  decorator,
   identifier,
-  typeAnnotation,
 } from "@babel/types";
 
 export interface ComponentPropertyData {
   key: string;
-  decorator: string;
 }
 export interface ComponentPropertyBuilder {
   setKey(key: ComponentPropertyData["key"]): ComponentPropertyBuilder;
-  setDecorator(
-    name: ComponentPropertyData["decorator"]
-  ): ComponentPropertyBuilder;
   build(): ClassProperty;
 }
 
+/**
+ * Builds a class property using the Angular signals input() API:
+ *   myProp = input();
+ *
+ * Per .claude/CLAUDE.md: use input() instead of @Input() decorator.
+ */
 export function componentPropertyBuilder() {
   const propData: Partial<ComponentPropertyData> = {};
   const propBuilder: ComponentPropertyBuilder = {
@@ -27,29 +26,19 @@ export function componentPropertyBuilder() {
       propData.key = key;
       return propBuilder;
     },
-    setDecorator(name: string): typeof propBuilder {
-      propData.decorator = name;
-      return propBuilder;
-    },
     /**
-     * requires that a key was set, otherwise an error is thrown
-     * @returns constructed class property
+     * Requires that a key was set, otherwise an error is thrown.
+     * @returns constructed class property using input() signal
      */
     build(): ClassProperty {
       if (propData.key === undefined) {
         throw new Error("Cannot construct a class property without a key");
       }
 
-      const decorators = propData.decorator
-        ? [decorator(callExpression(identifier("Input"), []))]
-        : [];
+      // Generates: myProp = input();
+      const initializer = callExpression(identifier("input"), []);
 
-      return classProperty(
-        identifier(propData.key),
-        undefined,
-        typeAnnotation(anyTypeAnnotation()),
-        decorators
-      );
+      return classProperty(identifier(propData.key), initializer, null, []);
     },
   };
   return propBuilder;
